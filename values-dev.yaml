@@ -1,6 +1,7 @@
 deployment:
   imageurl: sameershaikdevops/catalogue
   imageversion: IMAGE_VERSION
+  # imageversion: 1.0.0
 hpa:
   maxReplicas: 10
   utilisation: 75

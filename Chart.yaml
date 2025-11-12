@@ -2,4 +2,4 @@ apiVersion: v2
 name: catalogue
 version: 1.0.0
 description: catalogue helm chart
-appversion: v1
+appVersion: v1
