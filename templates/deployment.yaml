@@ -24,7 +24,7 @@ spec:
       containers:
       - name: catalogue
         image: "{{ .Values.deployment.imageurl }}:{{ .Values.deployment.imageversion }}"
-        command: ["sh", "-c", "echo 'failure' && exit 1"]
+        # command: ["sh", "-c", "echo 'failure' && exit 1"]
         resources:
           requests:
             cpu: "50m"

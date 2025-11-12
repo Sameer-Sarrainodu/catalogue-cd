@@ -49,7 +49,7 @@ pipeline {
                         def deploymentStatus = sh(
                             returnStdout: true,
                             script: """
-                                kubectl rollout status deployment/${env.COMPONENT} --timeout=180s -n ${PROJECT} || echo FAILED
+                                kubectl rollout status deployment/${env.COMPONENT} --timeout=60s -n ${PROJECT} || echo FAILED
                             """
                         ).trim()
 
@@ -65,7 +65,7 @@ pipeline {
                                 sh """
                                     helm rollback ${COMPONENT} -n ${PROJECT}
                                     sleep 20
-                                    kubectl rollout status deployment/${COMPONENT} --timeout=180s -n ${PROJECT} || echo FAILED
+                                    kubectl rollout status deployment/${COMPONENT} --timeout=60s -n ${PROJECT} || echo FAILED
                                 """
                                 echo "deployment failed but rollback success"
                             } else {
