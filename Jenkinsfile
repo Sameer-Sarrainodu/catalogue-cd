@@ -20,14 +20,28 @@ pipeline {
     // Build
     stages {
     // Build
+        stage('Deploy') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+                        sh """
+                            aws eks update-kubeconfig --region $REGION --name "$PROJECT-${params.deploy_to}"
+                            kubectl get nodes
+                            kubectl apply -f 01-namespace.yaml
+                            sed -i "s/IMAGE_VERSION/${params.appVersion}/g" values-${params.deploy_to}.yaml
+                            helm upgrade --install $COMPONENT -f values-${params.deploy_to}.yaml -n $PROJECT .
+
+                            #kubectl apply -f applications.yaml
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Check Status'){
             steps{
                 script{
                     withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                        // Connect to the correct EKS cluster first!
-                        sh """
-                            aws eks update-kubeconfig --region ${REGION} --name "${PROJECT}-${params.deploy_to}"
-                        """
 
                         def deploymentStatus = sh(returnStdout: true, script: "kubectl rollout status deployment/${env.COMPONENT} --timeout=30s -n $PROJECT || echo FAILED").trim()
                         if (deploymentStatus.contains("successfully rolled out")) {
@@ -46,23 +60,6 @@ pipeline {
                             }
                         }
 
-                    }
-                }
-            }
-        }
-        stage('Deploy') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                        sh """
-                            aws eks update-kubeconfig --region $REGION --name "$PROJECT-${params.deploy_to}"
-                            kubectl get nodes
-                            kubectl apply -f 01-namespace.yaml
-                            sed -i "s/IMAGE_VERSION/${params.appVersion}/g" values-${params.deploy_to}.yaml
-                            helm upgrade --install $COMPONENT -f values-${params.deploy_to}.yaml -n $PROJECT .
-
-                            #kubectl apply -f applications.yaml
-                        """
                     }
                 }
             }
