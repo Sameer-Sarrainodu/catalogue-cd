@@ -67,6 +67,7 @@ pipeline {
                                     sleep 20
                                     kubectl rollout status deployment/${COMPONENT} --timeout=180s -n ${PROJECT} || echo FAILED
                                 """
+                                echo "deployment failed but rollback success"
                             } else {
                                 echo "🚫 No previous Helm release found — skipping rollback."
                                 error "Deployment failed (no rollback possible)."
