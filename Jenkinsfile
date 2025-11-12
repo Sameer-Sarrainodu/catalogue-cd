@@ -38,32 +38,45 @@ pipeline {
             }
         }
 
-        stage('Check Status'){
-            steps{
-                script{
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+        stage('Check Status') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: "${REGION}") {
+                        sh """
+                            aws eks update-kubeconfig --region ${REGION} --name "${PROJECT}-${params.deploy_to}"
+                        """
 
-                        def deploymentStatus = sh(returnStdout: true, script: "kubectl rollout status deployment/${env.COMPONENT} --timeout=30s -n $PROJECT || echo FAILED").trim()
-                        if (deploymentStatus.contains("successfully rolled out")) {
-                            echo "Deployment is success"
-                        } else {
-                            sh """
-                                helm rollback $COMPONENT -n $PROJECT
-                                sleep 20
+                        def deploymentStatus = sh(
+                            returnStdout: true,
+                            script: """
+                                kubectl rollout status deployment/${env.COMPONENT} --timeout=180s -n ${PROJECT} || echo FAILED
                             """
-                            def rollbackStatus = sh(returnStdout: true, script: "kubectl rollout status deployment/${env.COMPONENT} --timeout=30s -n $PROJECT || echo FAILED").trim()
-                            if (rollbackStatus.contains("successfully rolled out")) {
-                                error "Deployment is Failure, Rollback Success"
-                            }
-                            else{
-                                error "Deployment is Failure, Rollback Failure. Application is not running"
+                        ).trim()
+
+                        if (deploymentStatus.contains("successfully rolled out")) {
+                            echo "✅ Deployment successful!"
+                        } else {
+                            echo "⚠️ Deployment failed. Checking if rollback is possible..."
+                            // Check if a previous Helm revision exists
+                            def revision = sh(returnStdout: true, script: "helm history ${COMPONENT} -n ${PROJECT} | tail -n +2 | wc -l").trim().toInteger()
+                            
+                            if (revision > 1) {
+                                echo "🔁 Rolling back to previous revision..."
+                                sh """
+                                    helm rollback ${COMPONENT} -n ${PROJECT}
+                                    sleep 20
+                                    kubectl rollout status deployment/${COMPONENT} --timeout=180s -n ${PROJECT} || echo FAILED
+                                """
+                            } else {
+                                echo "🚫 No previous Helm release found — skipping rollback."
+                                error "Deployment failed (no rollback possible)."
                             }
                         }
-
                     }
                 }
             }
         }
+
         // All components testing
         stage('Integration Testing'){
             when{
