@@ -59,7 +59,7 @@ pipeline {
                             echo "⚠️ Deployment failed. Checking if rollback is possible..."
                             // Check if a previous Helm revision exists
                             def revision = sh(returnStdout: true, script: "helm history ${COMPONENT} -n ${PROJECT} | tail -n +2 | wc -l").trim().toInteger()
-                            
+
                             if (revision > 1) {
                                 echo "🔁 Rolling back to previous revision..."
                                 sh """
@@ -80,7 +80,7 @@ pipeline {
         // All components testing
         stage('Integration Testing'){
             when{
-                expression { params.deploy_to = "qa" }
+                expression { params.deploy_to == "qa" }
             }
              steps{
                 script{
@@ -90,7 +90,7 @@ pipeline {
         }
         stage('PROD Deploy') {
             when{
-                expression { params.deploy_to = "prod" }
+                expression { params.deploy_to == "prod" }
             }
             steps {
                 script {
