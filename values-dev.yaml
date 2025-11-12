@@ -1,6 +1,7 @@
 deployment:
-  imageurl: sameershaikdevops/catalogue
+  imageurl: 968220652823.dkr.ecr.us-east-1.amazonaws.com/roboshop/catalogue
   imageversion: IMAGE_VERSION
+
   # imageversion: 1.0.0
 hpa:
   maxReplicas: 10
